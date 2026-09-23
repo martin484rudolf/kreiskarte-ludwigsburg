@@ -1,6 +1,6 @@
 {
   "hinweis": "Adressen der Haiilo-Seiten eintragen. Leere Adresse = Fläche nicht anklickbar.",
-  "ziel": "_top",
+  "ziel": "_blank",
   "gemeinden": {
     "08118001": {
       "name": "Affalterbach",
