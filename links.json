@@ -1,0 +1,184 @@
+{
+  "hinweis": "Adressen der Haiilo-Seiten eintragen. Leere Adresse = Fläche nicht anklickbar.",
+  "ziel": "_top",
+  "gemeinden": {
+    "08118001": {
+      "name": "Affalterbach",
+      "url": ""
+    },
+    "08118003": {
+      "name": "Asperg",
+      "url": ""
+    },
+    "08118006": {
+      "name": "Benningen am Neckar",
+      "url": ""
+    },
+    "08118007": {
+      "name": "Besigheim",
+      "url": ""
+    },
+    "08118079": {
+      "name": "Bietigheim-Bissingen",
+      "url": ""
+    },
+    "08118010": {
+      "name": "Bönnigheim",
+      "url": ""
+    },
+    "08118011": {
+      "name": "Ditzingen",
+      "url": ""
+    },
+    "08118012": {
+      "name": "Eberdingen",
+      "url": ""
+    },
+    "08118014": {
+      "name": "Erdmannhausen",
+      "url": ""
+    },
+    "08118015": {
+      "name": "Erligheim",
+      "url": ""
+    },
+    "08118078": {
+      "name": "Freiberg am Neckar",
+      "url": ""
+    },
+    "08118016": {
+      "name": "Freudental",
+      "url": ""
+    },
+    "08118018": {
+      "name": "Gemmrigheim",
+      "url": ""
+    },
+    "08118019": {
+      "name": "Gerlingen",
+      "url": ""
+    },
+    "08118021": {
+      "name": "Großbottwar",
+      "url": ""
+    },
+    "08118027": {
+      "name": "Hemmingen",
+      "url": ""
+    },
+    "08118028": {
+      "name": "Hessigheim",
+      "url": ""
+    },
+    "08118077": {
+      "name": "Ingersheim",
+      "url": ""
+    },
+    "08118040": {
+      "name": "Kirchheim am Neckar",
+      "url": ""
+    },
+    "08118080": {
+      "name": "Korntal-Münchingen",
+      "url": ""
+    },
+    "08118046": {
+      "name": "Kornwestheim",
+      "url": ""
+    },
+    "08118048": {
+      "name": "Ludwigsburg",
+      "url": ""
+    },
+    "08118047": {
+      "name": "Löchgau",
+      "url": ""
+    },
+    "08118049": {
+      "name": "Marbach am Neckar",
+      "url": ""
+    },
+    "08118050": {
+      "name": "Markgröningen",
+      "url": ""
+    },
+    "08118053": {
+      "name": "Mundelsheim",
+      "url": ""
+    },
+    "08118054": {
+      "name": "Murr",
+      "url": ""
+    },
+    "08118051": {
+      "name": "Möglingen",
+      "url": ""
+    },
+    "08118059": {
+      "name": "Oberriexingen",
+      "url": ""
+    },
+    "08118060": {
+      "name": "Oberstenfeld",
+      "url": ""
+    },
+    "08118063": {
+      "name": "Pleidelsheim",
+      "url": ""
+    },
+    "08118081": {
+      "name": "Remseck am Neckar",
+      "url": ""
+    },
+    "08118076": {
+      "name": "Sachsenheim",
+      "url": ""
+    },
+    "08118067": {
+      "name": "Schwieberdingen",
+      "url": ""
+    },
+    "08118068": {
+      "name": "Sersheim",
+      "url": ""
+    },
+    "08118070": {
+      "name": "Steinheim an der Murr",
+      "url": ""
+    },
+    "08118071": {
+      "name": "Tamm",
+      "url": ""
+    },
+    "08118073": {
+      "name": "Vaihingen an der Enz",
+      "url": ""
+    },
+    "08118074": {
+      "name": "Walheim",
+      "url": ""
+    }
+  },
+  "nachbarn": {
+    "Stuttgart": {
+      "name": "Volt Stuttgart",
+      "url": "https://volt.haiilo.app/workspaces/de-bw-stuttgart/apps/content/startseite"
+    },
+    "Böblingen": {
+      "name": "Volt Böblingen",
+      "url": ""
+    },
+    "Rems-Murr-Kreis": {
+      "name": "Volt Rems-Murr",
+      "url": ""
+    },
+    "Heilbronn": {
+      "name": "Volt Heilbronn",
+      "url": ""
+    },
+    "Enzkreis": {
+      "name": "Volt Pforzheim",
+      "url": ""
+    }
+  }
+}
