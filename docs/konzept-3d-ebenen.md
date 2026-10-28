@@ -153,10 +153,21 @@ Zwei Stufen, beide mit schmalem Budget machbar:
    kein Framework-Wechsel nötig für 2D.
 2. **Wahlkreise als GeoJSON** vom Statistischen Landesamt holen, auf den Kreis
    zuschneiden, als vierte Zuständigkeits-Ebene einhängen.
-3. **3D-Prototyp als eigene Seite** `3d.html` im selben Repo: MapLibre + basemap.de
-   Web Vektor (2D) + basemap.de 3D Gelände/Gebäude + unsere Gemeindegrenzen als
-   GeoJSON-Overlay + HWGK als WMS-Overlay im 3D-Modus. Kein Build, eine Datei,
-   wie heute.
+3. **3D-Prototyp als eigene Seite** `3d.html` im selben Repo — **umgesetzt als Prototyp**
+   (28.10.): MapLibre + basemap.de Web Vektor (2D) + DGM5-Gelände + LoD2-Gebäude
+   (3D-Tiles, ab Zoom 15) + Gemeinde-/Kreisgrenzen als GeoJSON-Overlay
+   (`data/*.geojson`, gezogen aus BKG-WFS `wfs_vg250-ew`, dl-de/by-2-0) +
+   WMS-Ebenen Glasfaser (BNetzA), Mobilfunk 5G (BNetzA), HWGK HQ10/HQ100/HQextrem
+   und festgesetzte Überschwemmungsgebiete (LUBW) umschaltbar.
+   Getestete Dienst-Endpunkte:
+   - Gelände: `https://sgx.geodatenzentrum.de/gdz_basemapde_3d_gelaende/dgm5_3857_rgb.json`
+   - Gebäude: `https://sgx.geodatenzentrum.de/gdz_basemapde_3d_gebaeude/lod2_3857_null.json`
+     (MapLibre-Einbindung über `Maplibre3DTiles.js` vom BKG, wie im offiziellen Beispiel)
+   - HWGK Überflutungsflächen: LUBW-WMS `UIS_0100000026600001` (HQ10), `...003` (HQ100),
+     `...004` (HQextrem); Tiefen: `UIS_0100000039300001–004`; Layer jeweils `0`, EPSG:25832
+   - ÜSG festgesetzt: LUBW-WMS `UIS_0100000003900001`, Layer `1` (HQ100-Gebiet)
+   - Mobilfunk 5G: BNetzA-WMS Layer
+     `Breitband_Mobilfunk_Privathaushalte__100m_Gitter__Alle_Anbieter_5G63805`
 4. **Selbstbau-Pipeline ausweiten** (Vaihingen-Repo, `tools/`): Ausschnitt auf
    den Kreis erweitern, Kachel-Schema definieren, Höhenlinien aus DGM1 rechnen.
    Nur wenn Ausstellung/Offline-3D gewünscht.
