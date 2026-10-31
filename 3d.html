@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kreiskarte Ludwigsburg – 3D (Prototyp)</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+  :root { --lila:#502379; --gelb:#FDC220; --ink:#1F1F1F; --muted:#5A5A5A; --linie:#E4DDEB; --ground:#fff; }
+  @media (prefers-color-scheme: dark) { :root { --ink:#F2EEF8; --muted:#B9AED0; --linie:#3A2E52; --ground:#171225; } }
+  * { box-sizing:border-box; }
+  html, body { margin:0; padding:0; height:100%; }
+  body { font-family:"Ubuntu", system-ui, sans-serif; background:var(--ground); color:var(--ink); }
+  #map { position:absolute; inset:0; }
+  .panel { position:absolute; top:10px; left:10px; z-index:2; display:flex; flex-direction:column; gap:8px;
+           max-width:270px; background:var(--ground); border:1px solid var(--linie); border-radius:8px;
+           padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,.15); font-size:13px; }
+  .panel h1 { margin:0 0 2px; font-size:15px; }
+  .panel .zurueck { font-size:12px; color:var(--muted); text-decoration:none; }
+  .panel .zurueck:hover { color:var(--lila); }
+  .ebene { display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .ebene input { accent-color:var(--lila); }
+  .ebene .name { flex:1; }
+  .ebene select { font:inherit; max-width:130px; }
+  .quelle { font-size:11px; line-height:1.4; color:var(--muted); border-top:1px solid var(--linie); padding-top:6px; }
+  .quelle a { color:inherit; }
+  .hinweis { font-size:11px; font-style:italic; color:var(--muted); }
+  .maplibregl-ctrl-attrib { font-size:10px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel" id="panel">
+  <h1>Landkreis Ludwigsburg – 3D</h1>
+  <a class="zurueck" href="./">← zur 2D-Karte</a>
+  <label class="ebene"><input type="checkbox" id="eb-glasfaser">
+    <span class="name">Glasfaser (Festnetz ≥ 1 Gbit/s)</span>
+    <select id="eb-glasfaser-sel">
+      <option value="0">≥ 1000 Mbit/s</option>
+      <option value="1">FTTB/H (Glasfaser)</option>
+    </select></label>
+  <label class="ebene"><input type="checkbox" id="eb-mobilfunk">
+    <span class="name">Mobilfunk 5G (alle Anbieter)</span></label>
+  <label class="ebene"><input type="checkbox" id="eb-hwgk">
+    <span class="name">Hochwasser (HWGK)</span>
+    <select id="eb-hwgk-sel">
+      <option value="uf100">Überflutung HQ100</option>
+      <option value="uf10">Überflutung HQ10</option>
+      <option value="ufext">Überflutung HQextrem</option>
+      <option value="tief100">Tiefen HQ100</option>
+    </select></label>
+  <label class="ebene"><input type="checkbox" id="eb-uesg">
+    <span class="name">Überschwemmungsgebiete (festgesetzt)</span></label>
+  <label class="ebene"><input type="checkbox" id="eb-gebaeude" checked>
+    <span class="name">Gebäude 3D (LoD2)</span></label>
+  <div class="hinweis" id="hinweis"></div>
+  <div class="quelle">
+    Hintergrund &amp; Gelände &amp; Gebäude: <a href="https://basemap.de" target="_blank" rel="noopener">basemap.de</a> © GeoBasis-DE / BKG.
+    Grenzen: © BKG (VG250), dl-de/by-2-0.
+    Glasfaser/Mobilfunk: <a href="https://gigabitgrundbuch.bund.de/GIGA/DE/Breitbandatlas/start.html" target="_blank" rel="noopener">Breitbandatlas</a> © BNetzA.
+    Hochwasser: LUBW Baden-Württemberg (HWGK, © UIS).
+  </div>
+</div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://sg.geodatenzentrum.de/gdz_basemapde_3d_gebaeude/Maplibre3DTiles.js"></script>
+<script>
+// --- Konfiguration -----------------------------------------------------------
+const LK_ZENTRUM = [9.1919, 48.8905];          // Ludwigsburg Mitte
+const LK_BOUNDS = [[8.82, 48.74], [9.55, 49.03]]; // grober Landkreis-Umfang
+
+const BKG = 'https://sgx.geodatenzentrum.de';
+const STYLE_2D = BKG + '/gdz_basemapde_vektor/styles/bm_web_col.json';
+const TERRAIN = BKG + '/gdz_basemapde_3d_gelaende/dgm5_3857_rgb.json';
+const LOD2 = BKG + '/gdz_basemapde_3d_gebaeude/lod2_3857_null.json';
+
+const BN = 'https://breitbandatlas-wms.gigabit-grundbuch.online/WMS/Breitbandatlas';
+const GF_LAYER = [
+  'Breitband_Festnetz__100m_Gitter__Privathaushalte_≥_1000_Mbit/s41271',
+  'Breitband_Festnetz__100m_Gitter__Glasfaser_(FTTB/H)_≥_1000_Mbit/s44392'
+];
+const MOBIL_LAYER = 'Breitband_Mobilfunk_Privathaushalte__100m_Gitter__Alle_Anbieter_5G63805';
+
+const LUBW = 'https://rips-gdi.lubw.baden-wuerttemberg.de/arcgis/services/wms';
+const HWGK = {
+  uf100:  LUBW + '/UIS_0100000026600003/MapServer/WMSServer',  // Überflutungsfläche HQ100
+  uf10:   LUBW + '/UIS_0100000026600001/MapServer/WMSServer',  // Überflutungsfläche HQ10
+  ufext:  LUBW + '/UIS_0100000026600004/MapServer/WMSServer',  // Überflutungsfläche HQextrem
+  tief100: LUBW + '/UIS_0100000039300003/MapServer/WMSServer'  // Überflutungstiefen HQ100
+};
+const UESG = LUBW + '/UIS_0100000003900001/MapServer/WMSServer'; // festgesetzte ÜSG (Layer 1 = HQ100-Gebiet)
+
+// WMS-GetMap-URL in EPSG:3857 (MapLibre-Kachel-CRS). bbox-Achsenfolge für 1.3.0 bei 3857: Ost, Nord.
+function wmsUrl(dienst, layer, opacity) {
+  return dienst + '?service=WMS&version=1.3.0&request=GetMap&styles=&crs=EPSG:3857' +
+    '&format=image/png&transparent=true&layers=' + encodeURIComponent(layer) +
+    '&bbox={bbox-epsg-3857}&width=256&height=256' +
+    (opacity < 1 ? '&opacity=' + opacity : '');
+}
+
+// --- Karte -------------------------------------------------------------------
+const map = new maplibregl.Map({
+  container: 'map',
+  style: STYLE_2D,
+  center: LK_ZENTRUM,
+  zoom: 10.5,
+  pitch: 55,
+  maxPitch: 85,
+  maxBounds: LK_BOUNDS,
+  hash: true
+});
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+const hinweis = document.getElementById('hinweis');
+map.on('load', () => {
+  // 3D-Gelände (DGM5)
+  map.addSource('terrain', { type: 'raster-dem', url: TERRAIN, tileSize: 256 });
+  map.setTerrain({ source: 'terrain', exaggeration: 1.0 });
+
+  // Hillshade dezent über das Gelände
+  map.addSource('hillshade', { type: 'raster-dem', url: TERRAIN, tileSize: 256 });
+  map.addLayer({ id: 'hillshade', type: 'hillshade', source: 'hillshade',
+    paint: { 'hillshade-shadow-color': '#473B24', 'hillshade-illumination-direction': 315 },
+    layout: { visibility: 'none' } });
+
+  // Landkreis-Umriss (aus eigener GeoJSON-Datei, Quelle BKG VG250)
+  map.addSource('kreis', { type: 'geojson', data: 'data/kreis_lk_ludwigsburg.geojson' });
+  map.addLayer({ id: 'kreis-linie', type: 'line', source: 'kreis',
+    paint: { 'line-color': '#502379', 'line-width': 3 } });
+
+  // Gemeindegrenzen + Namen + Einwohnerzahl (eigene GeoJSON, klickbar wie in index.html)
+  map.addSource('gemeinden', { type: 'geojson', data: 'data/gemeinden_lk_ludwigsburg.geojson' });
+  map.addLayer({ id: 'gemeinden-fuell', type: 'fill', source: 'gemeinden',
+    paint: { 'fill-color': '#502379', 'fill-opacity': 0.05 } });
+  map.addLayer({ id: 'gemeinden-linie', type: 'line', source: 'gemeinden',
+    paint: { 'line-color': '#502379', 'line-opacity': 0.55, 'line-width': 1 } });
+  map.addLayer({ id: 'gemeinden-name', type: 'symbol', source: 'gemeinden',
+    layout: { 'text-field': ['get', 'gen'], 'text-size': 11, 'text-anchor': 'center' },
+    paint: { 'text-color': '#1F1F1F', 'text-halo-color': '#ffffff', 'text-halo-width': 1.2 } });
+
+  // LoD2-Gebäude als 3D-Tiles (ab Zoom 15, sonst zu viel auf einmal)
+  const lod2 = new Mapbox3DTiles.Mapbox3DTilesLayer({
+    id: 'lod2', url: LOD2,
+    colorWall: '#c9c2d4', colorRoof: '#e8a23a', colorBridge: '#999999'
+  });
+  map.addLayer(lod2);
+  const gebCheck = document.getElementById('eb-gebaeude');
+  const gebSichtbar = () => map.setLayoutProperty('lod2', 'visibility', gebCheck.checked ? 'visible' : 'none');
+  map.on('zoom', () => {
+    map.setLayoutProperty('lod2', 'visibility',
+      (gebCheck.checked && map.getZoom() >= 15) ? 'visible' : 'none');
+  });
+  gebCheck.addEventListener('change', () => {
+    if (!gebCheck.checked) { map.setLayoutProperty('lod2', 'visibility', 'none'); return; }
+    hinweis.textContent = 'Gebäude werden ab Zoom 15 geladen …';
+    map.setLayoutProperty('lod2', 'visibility', map.getZoom() >= 15 ? 'visible' : 'none');
+  });
+
+  // Klick auf Gemeinde -> Tooltip mit Einwohnerzahl
+  map.on('click', 'gemeinden-fuell', (e) => {
+    const p = e.features[0].properties;
+    new maplibregl.Popup({ closeButton: false })
+      .setLngLat(e.lngLat)
+      .setHTML('<b>' + p.gen + '</b><br>' + Number(p.ewz).toLocaleString('de-DE') + ' Einwohner')
+      .addTo(map);
+  });
+  map.on('mouseenter', 'gemeinden-fuell', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'gemeinden-fuell', () => { map.getCanvas().style.cursor = ''; });
+});
+
+// --- Ebenen-Umschaltung ------------------------------------------------------
+function ebeneHinzufuegen(id, dienst, layerFn, opacity) {
+  const check = document.getElementById(id);
+  const akt = () => {
+    if (map.getSource(id)) { map.removeLayer(id); map.removeSource(id); }
+    if (!check.checked) return;
+    map.addSource(id, { type: 'raster', tiles: [wmsUrl(dienst, layerFn(), opacity)], tileSize: 256 });
+    map.addLayer({ id, type: 'raster', source: id, paint: { 'raster-opacity': opacity } }, 'gemeinden-linie');
+  };
+  check.addEventListener('change', akt);
+  return akt;
+}
+const aktGlas = ebeneHinzufuegen('eb-glasfaser', BN, () => GF_LAYER[+document.getElementById('eb-glasfaser-sel').value], 0.9);
+document.getElementById('eb-glasfaser-sel').addEventListener('change', aktGlas);
+const aktMobil = ebeneHinzufuegen('eb-mobilfunk', BN, () => MOBIL_LAYER, 0.9);
+const aktUesg = ebeneHinzufuegen('eb-uesg', UESG, () => '1', 0.6);
+
+const hwgkCheck = document.getElementById('eb-hwgk');
+const hwgkSel = document.getElementById('eb-hwgk-sel');
+const aktHwgk = () => {
+  if (map.getSource('eb-hwgk')) { map.removeLayer('eb-hwgk'); map.removeSource('eb-hwgk'); }
+  if (!hwgkCheck.checked) return;
+  map.addSource('eb-hwgk', { type: 'raster', tiles: [wmsUrl(HWGK[hwgkSel.value], '0', 0.75)], tileSize: 256 });
+  map.addLayer({ id: 'eb-hwgk', type: 'raster', source: 'eb-hwgk' }, 'gemeinden-linie');
+};
+hwgkCheck.addEventListener('change', aktHwgk);
+hwgkSel.addEventListener('change', aktHwgk);
+</script>
+</body>
+</html>
